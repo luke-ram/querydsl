@@ -240,4 +240,103 @@ class MemberTest {
 
     }
 
+    /**
+     * teamA에 속하는 모든 회원을 찾아라
+     * @throws Exception
+     */
+    @Test
+    public void join() throws Exception {
+        List<Member> result = queryFactory
+                .selectFrom(member)
+                .join(member.team, team)
+                .where(team.name.eq("teamA"))
+                .fetch();
+
+        assertThat(result)
+                .extracting("userName")
+                .containsExactly("member1","member2");
+
+    }
+
+    @Test
+    public void leftJoin() throws Exception {
+        List<Member> result = queryFactory
+                .selectFrom(member)
+                .leftJoin(member.team, team)
+                .where(team.name.eq("teamA"))
+                .fetch();
+
+        assertThat(result)
+                .extracting("userName")
+                .containsExactly("member1","member2");
+
+    }
+
+    /**
+     * 연관 관계 없어도 조인 가능 세타 조인
+     * 회원의 이름이 팀 이름과 같은 회원 조회
+     */
+    @Test
+    public void thetaJoin() throws Exception {
+        em.persist(new Member("teamA"));
+        em.persist(new Member("teamB"));
+        em.persist(new Member("teamC"));
+
+        List<Member> result = queryFactory
+                .select(member)
+                .from(member, team)
+                .where(member.userName.eq(team.name))
+                .fetch();
+
+        assertThat(result)
+                .extracting("userName")
+                .containsExactly("teamA","teamB");
+
+    }
+
+    /**
+     * 회원과 팀을 조인하면서, 팀 이름이 teamA인 팀만 조인, 회원은 모두 조회
+     * select m , t from Member m left join m.team t on t.name = 'teamA'
+     */
+
+    @Test
+    public void join_on_filltering(){
+        List<Tuple> result = queryFactory
+                .select(member, team)
+                .from(member)
+                .leftJoin(member.team, team).on(team.name.eq("teamA"))
+                .fetch();
+
+        for (Tuple tuple : result) {
+            System.out.println(tuple);
+        }
+
+    }
+
+    /**
+     * 연관 관계 없어도 조인 가능 세타 조인
+     * 회원의 이름이 팀 이름과 같은 회원 조회
+     */
+    @Test
+    public void join_on_no_relaction() throws Exception {
+        em.persist(new Member("teamA"));
+        em.persist(new Member("teamB"));
+        em.persist(new Member("teamC"));
+
+        List<Tuple> result = queryFactory
+                .select(member, team)
+                .from(member)
+                .leftJoin(team).on(member.userName.eq(team.name))
+                // 기존 조인은 member.team,team 이런식으로 진행되지만, 이렇게 쓰면 id로 조인을 하려고함, 우리는 연관관계 없는 이름(team.name) 조인이기때문에 team만 적음
+                .where(member.userName.eq(team.name))
+                .fetch();
+
+        for (Tuple tuple : result) {
+            System.out.println(tuple);
+        }
+
+
+    }
+
+
 }
