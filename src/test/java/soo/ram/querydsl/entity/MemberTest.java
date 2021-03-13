@@ -483,5 +483,21 @@ class MemberTest {
 
     }
 
+    @Test
+    public void concat(){
+        //{username}_{age}
+        List<String> result = queryFactory
+                .select(member.userName.concat("_").concat(member.age.stringValue()))
+                .from(member)
+                .where(member.userName.eq("member1"))
+                .fetch();
+
+        for (String s : result) {
+            System.out.println("s = " + s);
+        }
+
+
+    }
+
 
 }
