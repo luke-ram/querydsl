@@ -629,4 +629,22 @@ class MemberTest {
     }
 
 
+    /**
+     * dto가 querydsl에 의존성이 생기는 문제가 있다.
+     */
+    @Test
+    public void findDtoByQueryProjection() {
+        List<MemberDto> result = queryFactory
+                .select(new QMemberDto(member.userName, member.age))
+                .from(member)
+                .fetch();
+
+        for (MemberDto memberDto : result) {
+            System.out.println("memberDto = " + memberDto);
+        }
+
+
+    }
+
+
 }
