@@ -3,10 +3,13 @@ package soo.ram.querydsl.entity;
 import com.querydsl.core.QueryFactory;
 import com.querydsl.core.QueryResults;
 import com.querydsl.core.Tuple;
+import com.querydsl.core.types.ExpressionUtils;
+import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.CaseBuilder;
 import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import org.assertj.core.api.Assertions;
+import org.h2.engine.User;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -468,7 +471,7 @@ class MemberTest {
      * 좀더 복잡할 경우 CaseBuilder사용 굳이 사용하지 말자(DB는 조회용)
      */
     @Test
-    public void complexCase(){
+    public void complexCase() {
         List<String> result = queryFactory
                 .select(new CaseBuilder()
                         .when(member.age.between(0, 20)).then("0~20살")
@@ -484,7 +487,7 @@ class MemberTest {
     }
 
     @Test
-    public void concat(){
+    public void concat() {
         //{username}_{age}
         List<String> result = queryFactory
                 .select(member.userName.concat("_").concat(member.age.stringValue()))
@@ -500,7 +503,7 @@ class MemberTest {
     }
 
     @Test
-    public void simpleProjection(){
+    public void simpleProjection() {
         List<String> result = queryFactory
                 .select(member.userName)
                 .from(member)
@@ -513,7 +516,7 @@ class MemberTest {
     }
 
     @Test
-    public void tupleProjection(){
+    public void tupleProjection() {
         List<Tuple> result = queryFactory
                 .select(member.userName, member.age)
                 .from(member)
@@ -528,6 +531,100 @@ class MemberTest {
             System.out.println("age = " + age);
         }
 
+    }
+
+    @Test
+    public void findDtoByJPQL() {
+        List<MemberDto> resultList = em.createQuery("select new soo.ram.querydsl.entity.MemberDto(m.userName, m.age) from Member m", MemberDto.class)
+                .getResultList();
+
+        for (MemberDto memberDto : resultList) {
+            System.out.println("memberDto = " + memberDto);
+        }
+
+    }
+
+    /**
+     * setter를 통해서 값이 들어감
+     */
+    @Test
+    public void findDtoBySetter() {
+        List<MemberDto> list = queryFactory
+                .select(Projections.bean(MemberDto.class, member.userName, member.age))
+                .from(member)
+                .fetch();
+
+        for (MemberDto memberDto : list) {
+            System.out.println("memberDto = " + memberDto);
+        }
+
+    }
+
+    /**
+     * 필드에 다이렉트로 들어감
+     */
+    @Test
+    public void findDtoByFields() {
+        List<MemberDto> list = queryFactory
+                .select(Projections.fields(MemberDto.class, member.userName, member.age))
+                .from(member)
+                .fetch();
+
+        for (MemberDto memberDto : list) {
+            System.out.println("memberDto = " + memberDto);
+        }
+
+    }
+
+    /**
+     * DTO 필드명이 다를때
+     * 첫번째 타입은 userName타입을 name으로 맵핑해서 저장
+     * 두번째 타입은 서브 select쿼리 결과를 age필드에 매핑해서 저장하는 방법
+     */
+    @Test
+    public void findUserDtoByFields() {
+        QMember memberSub = new QMember("memberSub");
+        List<UserDto> list = queryFactory
+                .select(Projections.fields(UserDto.class,
+                        member.userName.as("name"),
+                        ExpressionUtils.as(JPAExpressions
+                                .select(memberSub.age.max())
+                                .from(memberSub), "age")
+                ))
+                .from(member)
+                .fetch();
+
+        for (UserDto userDto : list) {
+            System.out.println("userDto = " + userDto);
+        }
+
+    }
+
+    @Test
+    public void findDtoByConstructor() {
+        List<MemberDto> list = queryFactory
+                .select(Projections.constructor(MemberDto.class, member.userName, member.age))
+                .from(member)
+                .fetch();
+
+        for (MemberDto memberDto : list) {
+            System.out.println("memberDto = " + memberDto);
+        }
+
+    }
+
+    @Test
+    public void findUserDtoByConstructor() {
+        List<UserDto> list = queryFactory
+                .select(Projections.constructor(UserDto.class,
+                        member.userName,
+                        member.age))
+                .from(member)
+                .fetch();
+
+        for (UserDto userDto : list) {
+            System.out.println("userDto = " + userDto);
+        }
 
     }
 
