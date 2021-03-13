@@ -499,5 +499,37 @@ class MemberTest {
 
     }
 
+    @Test
+    public void simpleProjection(){
+        List<String> result = queryFactory
+                .select(member.userName)
+                .from(member)
+                .fetch();
+
+        for (String s : result) {
+            System.out.println("s = " + s);
+        }
+
+    }
+
+    @Test
+    public void tupleProjection(){
+        List<Tuple> result = queryFactory
+                .select(member.userName, member.age)
+                .from(member)
+                .fetch();
+
+        //tuple은 service까지 넘기지 말자
+        for (Tuple tuple : result) {
+            System.out.println("tuple = " + tuple);
+            String username = tuple.get(member.userName);
+            System.out.println("username = " + username);
+            Integer age = tuple.get(member.age);
+            System.out.println("age = " + age);
+        }
+
+
+    }
+
 
 }
