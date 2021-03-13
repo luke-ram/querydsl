@@ -12,6 +12,8 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.persistence.EntityManager;
+import javax.persistence.EntityManagerFactory;
+import javax.persistence.PersistenceUnit;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.*;
@@ -242,6 +244,7 @@ class MemberTest {
 
     /**
      * teamA에 속하는 모든 회원을 찾아라
+     *
      * @throws Exception
      */
     @Test
@@ -254,7 +257,7 @@ class MemberTest {
 
         assertThat(result)
                 .extracting("userName")
-                .containsExactly("member1","member2");
+                .containsExactly("member1", "member2");
 
     }
 
@@ -268,7 +271,7 @@ class MemberTest {
 
         assertThat(result)
                 .extracting("userName")
-                .containsExactly("member1","member2");
+                .containsExactly("member1", "member2");
 
     }
 
@@ -290,7 +293,7 @@ class MemberTest {
 
         assertThat(result)
                 .extracting("userName")
-                .containsExactly("teamA","teamB");
+                .containsExactly("teamA", "teamB");
 
     }
 
@@ -300,7 +303,7 @@ class MemberTest {
      */
 
     @Test
-    public void join_on_filltering(){
+    public void join_on_filltering() {
         List<Tuple> result = queryFactory
                 .select(member, team)
                 .from(member)
@@ -335,6 +338,40 @@ class MemberTest {
             System.out.println(tuple);
         }
 
+
+    }
+
+    @PersistenceUnit
+    EntityManagerFactory emf;
+
+    @Test
+    public void fetchJoinNo() {
+        em.flush();
+        em.clear();
+
+        Member member1 = queryFactory
+                .selectFrom(member)
+                .where(member.userName.eq("member1"))
+                .fetchOne();
+
+        boolean loaded = emf.getPersistenceUnitUtil().isLoaded(member1.getTeam()); // 해당 객체가 로딩된 객체인지(프록시인지) 확인하는 메소드
+        assertThat(loaded).as("패치조인 미적용").isFalse();
+
+    }
+
+    @Test
+    public void fetchJoinUse() {
+        em.flush();
+        em.clear();
+
+        Member member1 = queryFactory
+                .selectFrom(member)
+                .join(member.team,team).fetchJoin()
+                .where(member.userName.eq("member1"))
+                .fetchOne();
+
+        boolean loaded = emf.getPersistenceUnitUtil().isLoaded(member1.getTeam()); // 해당 객체가 로딩된 객체인지(프록시인지) 확인하는 메소드
+        assertThat(loaded).as("패치조인 적용").isTrue();
 
     }
 
