@@ -1,5 +1,6 @@
 package soo.ram.querydsl.entity;
 
+import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.QueryFactory;
 import com.querydsl.core.QueryResults;
 import com.querydsl.core.Tuple;
@@ -644,6 +645,37 @@ class MemberTest {
         }
 
 
+    }
+
+    /**
+     * 동적 쿼리 booleanBuilder 사용
+     */
+    @Test
+    public void dynamicQuery_booleanBuilder() {
+        //String usernameParam = "member1";
+        String usernameParam = null;
+
+        Integer ageParam = 10;
+
+        List<Member> result = searchMember1(usernameParam, ageParam);
+        assertThat(result.size()).isEqualTo(1);
+    }
+
+    private List<Member> searchMember1(String usernameParam, Integer ageParam) {
+
+        BooleanBuilder builder = new BooleanBuilder();
+         if(usernameParam != null){
+            builder.and(member.userName.eq(usernameParam));
+        }
+
+        if(ageParam != null){
+            builder.and(member.age.eq(ageParam));
+        }
+
+        return queryFactory
+                .selectFrom(member)
+                .where(builder)
+                .fetch();
     }
 
 
