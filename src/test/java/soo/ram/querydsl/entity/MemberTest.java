@@ -17,6 +17,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.annotation.Commit;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.persistence.EntityManager;
@@ -714,6 +715,40 @@ class MemberTest {
      */
     private BooleanExpression allEq(String username, Integer age) {
         return usernameEq(username).and(ageEq(age));
+    }
+
+    @Test
+    @Commit
+    public void bulkUpdate(){
+        //member1 = 10 -> 비회원
+        //member2 = 20 -> 비회원
+        //member3 = 30 -> 유지
+        //member4 = 40 -> 유지
+
+        queryFactory
+                .update(member)
+                .set(member.userName, "비회원")
+                .where(member.age.lt(28))
+                .execute();
+
+        //벌크연산후에는 영속성을 비워주자
+    }
+
+    @Test
+    public void bulkAdd(){
+        queryFactory
+                .update(member)
+                //.set(member.age, member.age.add(8))
+                .set(member.age, member.age.multiply(2))
+                .execute();
+    }
+
+    @Test
+    public void bulkDelete(){
+        queryFactory
+                .delete(member)
+                .where(member.age.gt(18))
+                .execute();
     }
 
 
